@@ -1,0 +1,118 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#" id="navbar-brand">ویزیت شو</a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+      <ul class="navbar-nav" id="navbar-items">
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page" href="{% url 'accounts:hello' %}">خانه</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">درباره ما</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">تماس با ما</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Modal خروج -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="logoutModalLabel">تأیید خروج</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+      </div>
+      <div class="modal-body">
+        آیا مطمئن هستید که می‌خواهید خارج شوید؟
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">خیر</button>
+        <button type="button" class="btn btn-danger" id="confirm-logout-btn">بله، خروج</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- axios + bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  const token = localStorage.getItem('auth_token');
+  const navbarItems = document.getElementById('navbar-items');
+  const navbarBrand = document.getElementById('navbar-brand');
+
+  if (token) {
+    axios.get('http://localhost:8000/api/user-info/', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }).then(res => {
+      const username = res.data.name || "کاربر";
+      navbarBrand.innerText = username;
+
+      // اضافه کردن گزینه خروج که modal را باز می‌کند
+      navbarItems.innerHTML += `
+        <li class="nav-item">
+          <a class="nav-link text-danger" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">خروج</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link " href="{% url 'accounts:panel_page' %}"  >پروفایل</a>
+        </li>
+      `;
+    }).catch(err => {
+      localStorage.removeItem('auth_token');
+      showLoginButtons();
+    });
+  } else {
+    showLoginButtons();
+  }
+
+  function showLoginButtons() {
+    navbarItems.innerHTML += `
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'accounts:register_page' %}">ثبت نام</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'accounts:login_page' %}">ورود</a>
+      </li>
+    `;
+  }
+
+  // دکمه "بله" در modal خروج
+  document.getElementById('confirm-logout-btn').addEventListener('click', function () {
+    const accessToken = localStorage.getItem('auth_token');
+    const refreshToken = localStorage.getItem('refresh_token');
+
+    if (accessToken && refreshToken) {
+      axios.post('http://localhost:8000/api/logout/', {
+        refresh: refreshToken
+      }, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      }).catch(err => {
+        console.error("خطا در خروج:", err);
+      }).finally(() => {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('refresh_token');
+
+        const modal = bootstrap.Modal.getInstance(document.getElementById('logoutModal'));
+        modal.hide();
+
+        alert("با موفقیت خارج شدید.");
+        window.location.href = "{% url 'accounts:hello' %}";
+      });
+    } else {
+      alert("توکن یافت نشد.");
+    }
+  });
+</script>

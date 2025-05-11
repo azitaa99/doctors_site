@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow rounded">
+                <div class="card-body">
+                    <h3 class="card-title text-center mb-4">ثبت نام</h3>
+                    <form id="register-form">
+                        <div class="mb-3">
+                            <label for="full_name" class="form-label">نام کامل</label>
+                            <input type="text" id="full_name" class="form-control" placeholder="نام و نام خانوادگی" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">شماره تلفن</label>
+                            <input type="tel" id="phone" class="form-control" placeholder="مثلاً 09123456789" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">ایمیل</label>
+                            <input type="email" id="email" class="form-control" placeholder="your@email.com" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">رمز عبور</label>
+                            <input type="password" id="password" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">تکرار رمز عبور</label>
+                            <input type="password" id="confirm_password" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="user_type" class="form-label">نوع کاربر</label>
+                            <select id="user_type" class="form-select" required>
+                                <option value="">انتخاب کنید</option>
+                                <option value="patient">کاربر عادی</option>
+                                <option value="doctor">پزشک</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" id="submit-btn">ثبت نام</button>
+                    </form>
+                    <div id="message" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+document.getElementById('register-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const full_name = document.getElementById('full_name').value;
+    const phone = document.getElementById('phone').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const confirm_password = document.getElementById('confirm_password').value;
+    const user_type = document.getElementById('user_type').value;
+
+    axios.post('http://localhost:8000/api/register/', {
+        full_name,
+        phone,
+        email,
+        password,
+        confirm_password,
+        user_type
+    })
+    .then(res => {
+        // بررسی موفقیت با status code
+        if (res.status === 200 || res.status === 201) {
+            document.getElementById('message').innerHTML =
+                '<div class="alert alert-success">ثبت نام با موفقیت انجام شد</div>';
+            window.location.href = "{% url 'accounts:login_page' %}";
+        }
+      else {
+        document.getElementById('message').innerHTML = '<div class="alert alert-danger">پاسخ غیرمنتظره از سرور</div>';
+    }
+    })
+    .catch(err => {
+        // بررسی دقیق خطاهای سرور
+        let errorMsg = 'خطا در ثبت نام';
+        if (err.response?.data) {
+            const errors = err.response.data;
+            errorMsg = Object.values(errors).flat().join('<br>');
+        }
+        document.getElementById('message').innerHTML =
+            `<div class="alert alert-danger">${errorMsg}</div>`;
+    });
+});
+
+</script>
+{% endblock %}

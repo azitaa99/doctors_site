@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow rounded">
+                <div class="card-body">
+                    <h3 class="card-title text-center mb-4">ورود به حساب کاربری</h3>
+                    <form id="login-form">
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">شماره تلفن</label>
+                            <input type="tel" id="phone" class="form-control" placeholder="مثلاً 09123456789" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">رمز عبور</label>
+                            <input type="password" id="password" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">ورود</button>
+                    </form>
+                    <div id="message" class="mt-3 text-center"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    document.getElementById('login-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const phone = document.getElementById('phone').value;
+        const password = document.getElementById('password').value;
+
+        axios.post('http://localhost:8000/api/login/', {
+            phone: phone,
+            password: password
+        })
+        .then(res => {
+            localStorage.setItem('auth_token', res.data.access);
+            localStorage.setItem('refresh_token', res.data.refresh);
+
+            // نمایش پیام موفقیت
+            const messageElement = document.getElementById('message');
+            messageElement.style.color = 'green';
+            messageElement.innerText = 'ورود موفقیت‌آمیز بود ✅';
+
+            // ریدایرکت به صفحه اصلی یا هر صفحه دلخواه
+            setTimeout(function () {
+                window.location.href = "{% url 'accounts:hello' %}"; // تغییر URL به صفحه مورد نظر
+            }, 1500); // 1.5 ثانیه تا ریدایرکت
+        })
+        .catch(err => {
+            console.log(err.response);
+
+            const messageElement = document.getElementById('message');
+            messageElement.style.color = 'red';
+
+            if (err.response?.data?.detail) {
+                messageElement.innerText = err.response.data.detail; // نمایش پیام خطای مخصوص
+            } else {
+                messageElement.innerText = 'خطا در ورود. لطفاً مجدد تلاش کنید.'; // پیام خطای عمومی
+            }
+        });
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+  <h3>پنل کاربری</h3>
+  <hr>
+
+  <div id="user-info" class="mb-4">
+    <p><strong>نام:</strong> <span id="user-name"></span></p>
+    <p><strong>شماره تلفن:</strong> <span id="user-phone"></span></p>
+  </div>
+
+  <div id="appointments">
+    <h5>نوبت‌های رزرو شده:</h5>
+    <ul id="appointment-list" class="list-group"></ul>
+  </div>
+
+  <hr>
+  <button class="btn btn-warning mt-3" onclick="window.location.href='{% url 'accounts:changepass_page' %}'">
+    تغییر رمز عبور
+  </button>
+  
+'
+  <button class="btn btn-danger mt-3" onclick="logout()">خروج</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+  const userToken = localStorage.getItem('auth_token');
+
+  if (!userToken) {
+    alert('ابتدا وارد حساب شوید');
+    window.location.href = "{% url 'accounts:login_page' %}";
+  }
+
+  // گرفتن اطلاعات کاربر
+  axios.get('http://localhost:8000/api/user-info/', {
+    headers: {
+      Authorization: `Bearer ${userToken}`
+    }
+  }).then(res => {
+  
+    document.getElementById('user-name').innerText = res.data.name || '---';
+    document.getElementById('user-phone').innerText = res.data.phone || '---';
+  }).catch(err => {
+    alert('خطا در دریافت اطلاعات کاربر');
+    console.error(err);
+  });
+
+  // گرفتن نوبت‌های کاربر
+  // گرفتن نوبت‌های کاربر
+axios.get('http://localhost:8000/api/user-appointments/', {
+  headers: {
+    Authorization: `Bearer ${userToken}`
+  }
+}).then(res => {
+  const list = document.getElementById('appointment-list');
+  if (res.data.length === 0) {
+    list.innerHTML = '<li class="list-group-item">هیچ نوبتی ثبت نشده است.</li>';
+  } else {
+    res.data.forEach(item => {
+      list.innerHTML += `<li class="list-group-item">
+        دکتر: ${item.doctor_name} | تاریخ: ${item.date} | ساعت: ${item.time}
+      </li>`;
+    });
+  }
+}).catch(err => {
+  alert('خطا در دریافت نوبت‌ها');
+  console.error(err.response ? err.response.data : err);
+});
+
+  function changePassword() {
+    alert('در نسخه بعدی اضافه می‌شود 😉');
+  }
+
+  function logout() {
+    if (confirm('آیا مطمئن هستید که می‌خواهید خارج شوید؟')) {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('refresh_token');
+      window.location.href = "{% url 'accounts:hello' %}";
+    }
+  }
+</script>
+{% endblock %}
